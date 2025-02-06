@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Norwegian Flashcards{% endblock %}
+
+{% block content %}
+  <h1>Welcome to Norwegian Flashcards</h1>
+  <p>Select an option below to get started:</p>
+  <ul>
+    <li><a href="{{ url_for('main.exercise') }}">Start Exercise</a></li>
+    <li><a href="{{ url_for('main.vocab_list') }}">View Vocabulary List</a></li>
+  </ul>
+{% endblock %}
