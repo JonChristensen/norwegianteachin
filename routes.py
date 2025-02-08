@@ -25,6 +25,28 @@ def exercise():
     user_id = current_user.id
     words = Verb.query.all()
 
+    # Define available exercise types
+    EXERCISE_TYPES = ['nor_to_eng', 'tenses', 'eng_to_nor']
+    
+    # Get exercise_type from query parameters
+    exercise_type = request.args.get('exercise_type')
+    
+    # Update exercise mode if provided in query parameters
+    if exercise_type:
+        session['exercise_mode'] = exercise_type
+    # Set default mode if none exists
+    elif 'exercise_mode' not in session:
+        session['exercise_mode'] = 'random'
+    
+    # Get the actual exercise type for this question
+    current_exercise = None
+    if session['exercise_mode'] == 'random':
+        current_exercise = random.choice(EXERCISE_TYPES)
+        current_app.logger.info(f"Randomly selected exercise type: {current_exercise}")
+    else:
+        current_exercise = session['exercise_mode']
+        current_app.logger.info(f"Using selected exercise type: {current_exercise}")
+
     # Intelligent exercise selection
     untested = []
     needs_improvement = []
@@ -46,9 +68,10 @@ def exercise():
     else:
         next_word = random.choice(words)
 
-    # For now, we set exercise_type to a default value
-    exercise_type = 'nor_to_eng'
-    return render_template('exercise.html', verb=next_word, exercise_type=exercise_type)
+    return render_template('exercise.html', 
+                         verb=next_word, 
+                         exercise_type=current_exercise,
+                         current_mode=session['exercise_mode'])
 
 @main_blueprint.route('/submit_answer', methods=['POST'])
 @login_required
@@ -56,11 +79,23 @@ def submit_answer():
     user_id = current_user.id
     verb_id = request.form['verb_id']
     user_answer = request.form['user_answer']
+    exercise_type = request.form['exercise_type']
 
     verb = Verb.query.get(verb_id)
-    is_correct = user_answer.strip().lower() in [
-        meaning.strip().lower() for meaning in verb.english_meanings.split(",")
-    ]
+    
+    # Check correctness based on exercise type
+    if exercise_type == 'nor_to_eng':
+        is_correct = user_answer.strip().lower() in [
+            meaning.strip().lower() for meaning in verb.english_meanings.split(",")
+        ]
+        correct_answer = verb.english_meanings
+    elif exercise_type == 'tenses':
+        expected = f"{verb.past}, {verb.past_participle}".lower()
+        is_correct = user_answer.strip().lower() == expected
+        correct_answer = f"{verb.past}, {verb.past_participle}"
+    else:  # eng_to_nor
+        is_correct = user_answer.strip().lower() == verb.norwegian.lower()
+        correct_answer = verb.norwegian
 
     # Fetch or create progress entry for this user and verb
     progress = UserVerbProgress.query.filter_by(user_id=user_id, verb_id=verb.id).first()
@@ -78,14 +113,18 @@ def submit_answer():
     if is_correct:
         feedback = "Correct!"
     else:
-        feedback = "Incorrect. The correct answer is: " + verb.english_meanings
+        feedback = f"Incorrect. The correct answer is: {correct_answer}"
 
     # Instead of redirecting immediately, re-render a review page where the user can see:
     # - The question (verb)
     # - Their submitted answer
     # - The feedback message
     # And provide a button to load the next exercise.
-    return render_template('exercise_review.html', verb=verb, user_answer=user_answer, feedback=feedback)
+    return render_template('exercise_review.html', 
+                         verb=verb, 
+                         user_answer=user_answer, 
+                         feedback=feedback,
+                         exercise_type=exercise_type)
 
 
 @main_blueprint.route('/vocab_list')
