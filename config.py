@@ -5,8 +5,7 @@ class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "super-secret-key")
     
     SQLALCHEMY_DATABASE_URI = os.getenv(
-        "DATABASE_URL",
-        "postgresql://flashcards_user:your_secure_password@localhost/flashcards"
+        "DATABASE_URL"
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
