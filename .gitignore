@@ -1,3 +1,7 @@
 venv/*
 .env
-__pycache__/*
+# Ignore Python cache directories and compiled files
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class

@@ -6,6 +6,10 @@ from models import db, User
 from routes import main_blueprint  # Import blueprint
 from auth import auth_blueprint, init_auth
 
+from dotenv import load_dotenv
+# Load environment variables from .env file
+load_dotenv()
+
 def create_app():
     app = Flask(__name__)
     app.config.from_object("config.Config")
