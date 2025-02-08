@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Review Your Answer{% endblock %}
+
+{% block content %}
+  <h1>Review Your Answer</h1>
+  <p><strong>Question:</strong> Translate the Norwegian verb: <em>{{ verb.norwegian }}</em></p>
+  <p><strong>Your Answer:</strong> {{ user_answer }}</p>
+  <p><strong>Feedback:</strong> {{ feedback }}</p>
+  
+  <!-- Button to go to the next exercise -->
+  <form action="{{ url_for('main.exercise') }}" method="get">
+    <button type="submit">Next Exercise</button>
+  </form>
+{% endblock %}

@@ -37,3 +37,8 @@ body {
     text-align: center;
   }
   
+  .disabled {
+    color: #888;            /* Grey text */
+    pointer-events: none;   /* Prevent clicking */
+    text-decoration: none;  /* Remove underline */
+  }

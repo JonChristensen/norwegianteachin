@@ -1,23 +1,34 @@
 from flask import Flask
-from models import db
-from routes import main_blueprint
-from dotenv import load_dotenv
-load_dotenv()
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
+from flask_login import LoginManager
+from models import db, User
+from routes import main_blueprint  # Import blueprint
+from auth import auth_blueprint, init_auth
 
 def create_app():
     app = Flask(__name__)
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///flashcards.db'
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    app.config['SECRET_KEY'] = 'your-secret-key'
+    app.config.from_object("config.Config")
 
     db.init_app(app)
-    
-    with app.app_context():
-        db.create_all()  # create tables if they don't exist
+    migrate = Migrate(app, db)
 
+    login_manager = LoginManager()
+    login_manager.init_app(app)
+
+    @login_manager.user_loader
+    def load_user(user_id):
+        return User.query.get(int(user_id))
+
+    # Initialize OAuth authentication
+    init_auth(app)
+
+    # Register blueprints
     app.register_blueprint(main_blueprint)
+    app.register_blueprint(auth_blueprint)
+
     return app
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app = create_app()
     app.run(debug=True)

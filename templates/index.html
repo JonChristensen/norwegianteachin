@@ -1,12 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}Home - Norwegian Flashcards{% endblock %}
+{% block title %}Welcome - Norwegian Flashcards{% endblock %}
 
 {% block content %}
-  <h1>Welcome to Norwegian Flashcards</h1>
-  <p>Select an option below to get started:</p>
-  <ul>
-    <li><a href="{{ url_for('main.exercise') }}">Start Exercise</a></li>
-    <li><a href="{{ url_for('main.vocab_list') }}">View Vocabulary List</a></li>
-  </ul>
+   {% if current_user.is_authenticated %}
+    <h1>Welcome, {{ current_user.email }}!</h1>
+    <p>You are logged in. Use the menu above to access your exercises and vocabulary list.</p>
+  {% else %}
+    <h1>Welcome to Norwegian Teachin!</h1>
+    <p>The only Norwegian verb practice flashcard app. <a href="{{ url_for('auth.login') }}">Login</a> to login or make a new account.</p>
+  {% endif %}
 {% endblock %}

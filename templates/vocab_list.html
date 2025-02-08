@@ -15,17 +15,17 @@
       </tr>
     </thead>
     <tbody>
-      {% for word in words %}
+      {% for verb, progress, percentage in words %}
       <tr>
-        <td>{{ word.norwegian }}</td>
-        <td>{{ word.english_meanings }}</td>
-        <td>{{ word.total_attempts }}</td>
-        <td>{{ word.correct_attempts }}</td>
+        <td>{{ verb.norwegian }}</td>
+        <td>{{ verb.english_meanings }}</td>
+        <td>{{ progress.total_attempts if progress else 0 }}</td>
+        <td>{{ progress.correct_attempts if progress else 0 }}</td>
         <td>
-          {% if word.total_attempts == 0 %}
+          {% if progress is none or progress.total_attempts == 0 %}
             Untested
           {% else %}
-            {{ (word.correct_attempts/word.total_attempts * 100)|round(1) }}%
+            {{ percentage|round(1) }}%
           {% endif %}
         </td>
       </tr>
