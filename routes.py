@@ -1,7 +1,8 @@
 from flask import Blueprint, jsonify, render_template, request, redirect, url_for
 from flask_login import login_required, current_user
 from models import db, Verb, UserVerbProgress
-from grading import generate_context_for_verb
+from grading import grade_free_form_answer, generate_context_for_verb
+
 # Define Blueprint
 main_blueprint = Blueprint('main', __name__)
 
