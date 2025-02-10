@@ -98,7 +98,7 @@ def submit_answer():
     
     # Prepare a feedback message.
     if context_requested:
-        feedback = "You requested context for this exercise; this attempt will not count as correct."
+        feedback = "You got a hint for this exercise; this attempt will not count as correct."
     else:
         if is_correct:
             feedback = "Correct!"
