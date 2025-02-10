@@ -40,6 +40,28 @@ def exercise():
     user_id = current_user.id
     words = Verb.query.all()
 
+    # Define available exercise types
+    EXERCISE_TYPES = ['nor_to_eng', 'tenses', 'eng_to_nor']
+    
+    # Get exercise_type from query parameters
+    exercise_type = request.args.get('exercise_type')
+    
+    # Update exercise mode if provided in query parameters
+    if exercise_type:
+        session['exercise_mode'] = exercise_type
+    # Set default mode if none exists
+    elif 'exercise_mode' not in session:
+        session['exercise_mode'] = 'random'
+    
+    # Get the actual exercise type for this question
+    current_exercise = None
+    if session['exercise_mode'] == 'random':
+        current_exercise = random.choice(EXERCISE_TYPES)
+        current_app.logger.info(f"Randomly selected exercise type: {current_exercise}")
+    else:
+        current_exercise = session['exercise_mode']
+        current_app.logger.info(f"Using selected exercise type: {current_exercise}")
+
     # Intelligent exercise selection
     untested = []
     needs_improvement = []
@@ -61,9 +83,11 @@ def exercise():
     else:
         next_word = random.choice(words)
 
-    # For now, we set exercise_type to a default value
-    exercise_type = 'nor_to_eng'
-    return render_template('exercise.html', verb=next_word, exercise_type=exercise_type)
+    return render_template('exercise.html', 
+                         verb=next_word, 
+                         exercise_type=current_exercise,
+                         current_mode=session['exercise_mode'])
+
 
 @main_blueprint.route('/submit_answer', methods=['POST'])
 @login_required
@@ -71,21 +95,55 @@ def submit_answer():
     user_id = current_user.id
     verb_id = request.form['verb_id']
     user_answer = request.form['user_answer']
+    
+    # Get the exercise type from the form if it was provided.
+    exercise_type = request.form.get('exercise_type', None)
+    
+    # Retrieve the Verb object.
     verb = Verb.query.get(verb_id)
     
-    # Check if the user requested context for this exercise.
-    # Using pop() so that the flag is removed after processing.
+    # Pop the context_requested flag from the session.
     context_requested = session.pop("context_requested", False)
     
-    if context_requested:
-        # If context was requested, do not count this attempt as correct.
-        is_correct = False
-    else:
-        # Otherwise, grade the answer normally using the LLM-based function.
-        # (Assuming verb.english_meanings is a comma-separated string)
-        is_correct = grade_free_form_answer(user_answer, verb.english_meanings.split(","))
+    # Initialize variables.
+    is_correct = False
+    feedback = ""
     
-    # Fetch or create the user's progress record for this verb.
+    # If context was requested, do not count the answer as correct.
+    if context_requested:
+        is_correct = False
+        feedback = "You got a hint for this exercise; this attempt will not count as correct."
+    else:
+        # If an exercise type is provided, grade based on that type.
+        if exercise_type:
+            if exercise_type == 'nor_to_eng':
+                # For Norwegian-to-English, compare against acceptable answers.
+                is_correct = user_answer.strip().lower() in [
+                    meaning.strip().lower() for meaning in verb.english_meanings.split(",")
+                ]
+                correct_answer = verb.english_meanings
+            elif exercise_type == 'tenses':
+                # For tenses, the expected answer is a comma-separated string of past and past participle.
+                expected = f"{verb.past}, {verb.past_participle}".lower()
+                is_correct = user_answer.strip().lower() == expected
+                correct_answer = f"{verb.past}, {verb.past_participle}"
+            else:  # eng_to_nor
+                is_correct = user_answer.strip().lower() == verb.norwegian.lower()
+                correct_answer = verb.norwegian
+
+            if is_correct:
+                feedback = "Correct!"
+            else:
+                feedback = f"Incorrect. The correct answer is: {correct_answer}"
+        else:
+            # Fallback: use the LLM-based grading function if no exercise_type is provided.
+            is_correct = grade_free_form_answer(user_answer, verb.english_meanings.split(","))
+            if is_correct:
+                feedback = "Correct!"
+            else:
+                feedback = "Incorrect. The correct answer is: " + verb.english_meanings
+
+    # Fetch or create the progress entry for this user and verb.
     progress = UserVerbProgress.query.filter_by(user_id=user_id, verb_id=verb.id).first()
     if not progress:
         progress = UserVerbProgress(user_id=user_id, verb_id=verb.id, total_attempts=0, correct_attempts=0)
@@ -94,21 +152,15 @@ def submit_answer():
     progress.total_attempts += 1
     if is_correct:
         progress.correct_attempts += 1
-    
+
     db.session.commit()
     
-    # Prepare a feedback message.
-    if context_requested:
-        feedback = "You got a hint for this exercise; this attempt will not count as correct."
-    else:
-        if is_correct:
-            feedback = "Correct!"
-        else:
-            feedback = "Incorrect. The correct answer is: " + verb.english_meanings
-    
-    # Render a review page so the user can see the question, their answer, and the feedback.
-    return render_template('exercise_review.html', verb=verb, user_answer=user_answer, feedback=feedback)
-
+    # Render the review page with the question, user's answer, feedback, and the exercise type.
+    return render_template('exercise_review.html', 
+                           verb=verb, 
+                           user_answer=user_answer, 
+                           feedback=feedback,
+                           exercise_type=exercise_type)
 
 @main_blueprint.route('/vocab_list')
 @login_required

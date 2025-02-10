@@ -4,11 +4,18 @@
 
 {% block content %}
   <h1>Review Your Answer</h1>
-  <p><strong>Question:</strong> Translate the Norwegian verb: <em>{{ verb.norwegian }}</em></p>
+  
+  {% if exercise_type == 'nor_to_eng' %}
+    <p><strong>Question:</strong> Translate the Norwegian verb: <em>{{ verb.norwegian }}</em></p>
+  {% elif exercise_type == 'tenses' %}
+    <p><strong>Question:</strong> Past tenses for: <em>{{ verb.norwegian }}</em></p>
+  {% elif exercise_type == 'eng_to_nor' %}
+    <p><strong>Question:</strong> Translate to Norwegian: <em>{{ verb.english_meanings.split(',')[0] }}</em></p>
+  {% endif %}
+  
   <p><strong>Your Answer:</strong> {{ user_answer }}</p>
   <p><strong>Feedback:</strong> {{ feedback }}</p>
   
-  <!-- Button to proceed to the next exercise -->
   <form action="{{ url_for('main.exercise') }}" method="get">
     <button type="submit">Next Exercise</button>
   </form>
