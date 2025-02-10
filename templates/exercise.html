@@ -4,26 +4,32 @@
 
 {% block content %}
   <h1>Exercise: {{ exercise_type.replace('_', ' ').title() }}</h1>
+  <p>Translate the Norwegian verb: <strong>{{ verb.norwegian }}</strong></p>
   
-  {% if exercise_type == 'nor_to_eng' %}
-    <p>Translate the Norwegian verb: <strong>{{ verb.norwegian }}</strong></p>
-  {% elif exercise_type == 'tenses' %}
-    <p>Enter the past tense and past participle for: <strong>{{ verb.norwegian }}</strong></p>
-    <p>Separate your answers with a comma (e.g., "past, past_participle")</p>
-  {% elif exercise_type == 'eng_to_nor' %}
-    <p>Translate the English word to Norwegian: <strong>{{ verb.english_meanings.split(',')[0] }}</strong></p>
-  {% endif %}
-  
-  {% if feedback %}
-    <p><strong>{{ feedback }}</strong></p>
-  {% endif %}
-  
-  <!-- Update the form's action to point to the submit_answer route -->
+  <!-- Form to submit the answer -->
   <form action="{{ url_for('main.submit_answer') }}" method="post">
-    <!-- Include a hidden field for the verb's id -->
     <input type="hidden" name="verb_id" value="{{ verb.id }}">
     <label for="user_answer">Your Answer:</label>
     <input type="text" name="user_answer" id="user_answer" required>
     <button type="submit">Submit Answer</button>
   </form>
+  
+  <!-- Button to get additional context/hint -->
+  <button id="get-context-btn" type="button">Get Context</button>
+  <div id="context-display" style="margin-top: 15px; padding: 10px; border: 1px solid #ccc;"></div>
+  
+  <script>
+    document.getElementById("get-context-btn").addEventListener("click", function() {
+      const verbId = document.querySelector('input[name="verb_id"]').value;
+      fetch("/get_context/" + verbId)
+        .then(response => response.json())
+        .then(data => {
+          document.getElementById("context-display").innerText = data.context;
+        })
+        .catch(error => {
+          console.error("Error fetching context:", error);
+          document.getElementById("context-display").innerText = "Error retrieving context.";
+        });
+    });
+  </script>
 {% endblock %}

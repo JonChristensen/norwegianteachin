@@ -1,7 +1,7 @@
-from flask import Blueprint, render_template, request, redirect, url_for
+from flask import Blueprint, jsonify, render_template, request, redirect, url_for
 from flask_login import login_required, current_user
 from models import db, Verb, UserVerbProgress
-
+from grading import generate_context_for_verb
 # Define Blueprint
 main_blueprint = Blueprint('main', __name__)
 
@@ -18,6 +18,20 @@ def index():
     else:
         current_app.logger.info("No user is logged in.")
     return render_template('index.html')
+
+@main_blueprint.route('/get_context/<int:verb_id>', methods=['GET'])
+@login_required
+def get_context(verb_id):
+    # Set a flag indicating that the user requested context for this exercise.
+    session["context_requested"] = True
+
+    verb = Verb.query.get(verb_id)
+    if not verb:
+        return jsonify({"error": "Verb not found"}), 404
+    
+    context = generate_context_for_verb(verb)
+    return jsonify({"context": context})
+
 
 @main_blueprint.route('/exercise')
 @login_required
@@ -56,35 +70,42 @@ def submit_answer():
     user_id = current_user.id
     verb_id = request.form['verb_id']
     user_answer = request.form['user_answer']
-
     verb = Verb.query.get(verb_id)
-    is_correct = user_answer.strip().lower() in [
-        meaning.strip().lower() for meaning in verb.english_meanings.split(",")
-    ]
-
-    # Fetch or create progress entry for this user and verb
+    
+    # Check if the user requested context for this exercise.
+    # Using pop() so that the flag is removed after processing.
+    context_requested = session.pop("context_requested", False)
+    
+    if context_requested:
+        # If context was requested, do not count this attempt as correct.
+        is_correct = False
+    else:
+        # Otherwise, grade the answer normally using the LLM-based function.
+        # (Assuming verb.english_meanings is a comma-separated string)
+        is_correct = grade_free_form_answer(user_answer, verb.english_meanings.split(","))
+    
+    # Fetch or create the user's progress record for this verb.
     progress = UserVerbProgress.query.filter_by(user_id=user_id, verb_id=verb.id).first()
     if not progress:
         progress = UserVerbProgress(user_id=user_id, verb_id=verb.id, total_attempts=0, correct_attempts=0)
         db.session.add(progress)
-
+    
     progress.total_attempts += 1
     if is_correct:
         progress.correct_attempts += 1
-
+    
     db.session.commit()
-
-    # Prepare a feedback message
-    if is_correct:
-        feedback = "Correct!"
+    
+    # Prepare a feedback message.
+    if context_requested:
+        feedback = "You requested context for this exercise; this attempt will not count as correct."
     else:
-        feedback = "Incorrect. The correct answer is: " + verb.english_meanings
-
-    # Instead of redirecting immediately, re-render a review page where the user can see:
-    # - The question (verb)
-    # - Their submitted answer
-    # - The feedback message
-    # And provide a button to load the next exercise.
+        if is_correct:
+            feedback = "Correct!"
+        else:
+            feedback = "Incorrect. The correct answer is: " + verb.english_meanings
+    
+    # Render a review page so the user can see the question, their answer, and the feedback.
     return render_template('exercise_review.html', verb=verb, user_answer=user_answer, feedback=feedback)
 
 

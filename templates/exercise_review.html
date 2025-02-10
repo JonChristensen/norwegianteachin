@@ -8,8 +8,9 @@
   <p><strong>Your Answer:</strong> {{ user_answer }}</p>
   <p><strong>Feedback:</strong> {{ feedback }}</p>
   
-  <!-- Button to go to the next exercise -->
+  <!-- Button to proceed to the next exercise -->
   <form action="{{ url_for('main.exercise') }}" method="get">
     <button type="submit">Next Exercise</button>
   </form>
 {% endblock %}
+
