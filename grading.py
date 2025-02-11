@@ -18,24 +18,38 @@ def expand_answers(correct_answers):
 def grade_free_form_answer(user_answer, correct_answers):
     """
     Use OpenAI's ChatCompletion API to determine if the user's answer is acceptable.
-    This version adjusts the prompt to instruct the model to ignore extra words like "to"
-    if the core meaning matches.
+    This version normalizes answers by removing a leading 'to ' and then compares the core meanings.
     """
+    # Expand the correct answers
     expanded_answers = expand_answers(correct_answers)
     
-    # Construct the prompt. Note that we explicitly instruct the model to ignore words like "to".
+    # Normalize acceptable answers: remove a leading "to " if present and lowercase
+    normalized_answers = []
+    for ans in expanded_answers:
+        norm = ans.strip().lower()
+        if norm.startswith("to "):
+            norm = norm[3:]
+        normalized_answers.append(norm)
+    
+    # Normalize the user's answer similarly
+    normalized_user = user_answer.strip().lower()
+    if normalized_user.startswith("to "):
+        normalized_user = normalized_user[3:]
+    
+    # Construct a detailed prompt that shows both the original and normalized answers.
     prompt = (
         f"The acceptable answers for the Norwegian verb are: {', '.join(expanded_answers)}.\n"
-        f"The user's answer is: '{user_answer}'.\n"
-        "Determine if the user's answer is an acceptable match to one of the acceptable meanings. "
-        "If the user's answer contains extra words (e.g., a leading 'to') but the core word matches, "
-        "consider it acceptable. Respond with only 'yes' or 'no'."
+        f"After normalizing (by removing a leading 'to ' if present and lowercasing), "
+        f"the acceptable answers are: {', '.join(normalized_answers)}.\n"
+        f"The user's answer is: '{user_answer}', which normalizes to '{normalized_user}'.\n"
+        "Determine if the normalized user's answer exactly matches one of the normalized acceptable answers.\n"
+        "Respond with only 'yes' or 'no'."
     )
     try:
         response = openai.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": "You are an expert language tutor."},
+                {"role": "system", "content": "You are an expert language tutor who only responds with 'yes' or 'no'."},
                 {"role": "user", "content": prompt}
             ],
             max_tokens=5,
@@ -45,18 +59,8 @@ def grade_free_form_answer(user_answer, correct_answers):
         return answer.startswith("yes")
     except Exception as e:
         print("Error during grading:", e)
-        # Fallback: use a simple check that ignores a leading "to " if present.
-        normalized_user = user_answer.strip().lower()
-        # Remove a leading "to " if it exists
-        if normalized_user.startswith("to "):
-            normalized_user = normalized_user[3:]
-        for ans in expanded_answers:
-            normalized_ans = ans.strip().lower()
-            if normalized_ans.startswith("to "):
-                normalized_ans = normalized_ans[3:]
-            if normalized_user == normalized_ans:
-                return True
-        return False
+        # Fallback: perform direct normalized comparison.
+        return normalized_user in normalized_answers
 
 def generate_context_for_verb(verb):
     prompt = (
