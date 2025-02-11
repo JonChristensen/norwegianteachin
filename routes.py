@@ -37,24 +37,25 @@ def get_context(verb_id):
 @main_blueprint.route('/exercise')
 @login_required
 def exercise():
+    # Clear any previously set context flag so it doesn't carry over to a new exercise.
+    session.pop("context_requested", None)
+
     user_id = current_user.id
     words = Verb.query.all()
 
     # Define available exercise types
     EXERCISE_TYPES = ['nor_to_eng', 'tenses', 'eng_to_nor']
-    
+
     # Get exercise_type from query parameters
     exercise_type = request.args.get('exercise_type')
-    
+
     # Update exercise mode if provided in query parameters
     if exercise_type:
         session['exercise_mode'] = exercise_type
-    # Set default mode if none exists
     elif 'exercise_mode' not in session:
         session['exercise_mode'] = 'random'
-    
-    # Get the actual exercise type for this question
-    current_exercise = None
+
+    # Determine the current exercise type
     if session['exercise_mode'] == 'random':
         current_exercise = random.choice(EXERCISE_TYPES)
         current_app.logger.info(f"Randomly selected exercise type: {current_exercise}")
@@ -84,9 +85,9 @@ def exercise():
         next_word = random.choice(words)
 
     return render_template('exercise.html', 
-                         verb=next_word, 
-                         exercise_type=current_exercise,
-                         current_mode=session['exercise_mode'])
+                           verb=next_word, 
+                           exercise_type=current_exercise,
+                           current_mode=session['exercise_mode'])
 
 
 @main_blueprint.route('/submit_answer', methods=['POST'])
