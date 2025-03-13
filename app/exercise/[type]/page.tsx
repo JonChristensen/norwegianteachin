@@ -41,7 +41,7 @@ export default function ExercisePage() {
   const fetchExercise = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`/api/exercise?type=${params.type}`)
+      const response = await fetch(`/api/exercise/${params.type}`)
       if (!response.ok) {
         throw new Error("Failed to fetch exercise")
       }
