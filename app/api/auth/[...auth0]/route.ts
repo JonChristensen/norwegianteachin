@@ -1,4 +1,7 @@
 import { handleAuth } from '@auth0/nextjs-auth0';
 
-export const GET = handleAuth();
-export const POST = handleAuth(); 
+export const { GET, POST } = handleAuth({
+  logout: {
+    returnTo: process.env.AUTH0_BASE_URL
+  }
+}); 
