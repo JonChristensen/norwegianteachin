@@ -3,10 +3,14 @@
 import { Layout } from "@/components/layout"
 import { useUser } from "@auth0/nextjs-auth0/client"
 import { useEffect, useState } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 
 export default function HomePage() {
   const { user, error, isLoading } = useUser()
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [progressData, setProgressData] = useState<any>(null)
+  const [loadingProgress, setLoadingProgress] = useState(false)
 
   useEffect(() => {
     if (error) {
@@ -14,6 +18,25 @@ export default function HomePage() {
       setErrorMessage(error.message)
     }
   }, [error])
+
+  useEffect(() => {
+    if (user) {
+      fetchProgress()
+    }
+  }, [user])
+
+  const fetchProgress = async () => {
+    setLoadingProgress(true)
+    try {
+      const response = await fetch('/api/progress')
+      const data = await response.json()
+      setProgressData(data)
+    } catch (err) {
+      console.error('Error fetching progress:', err)
+    } finally {
+      setLoadingProgress(false)
+    }
+  }
 
   if (isLoading) return <div>Loading...</div>
   if (errorMessage) return <div>Error: {errorMessage}</div>
@@ -57,30 +80,185 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Your Progress</h2>
-            <div className="space-y-4">
-              <div>
-                <div className="flex justify-between mb-1">
-                  <span className="text-sm font-medium text-gray-700">Verbs Mastered</span>
-                  <span className="text-sm font-medium text-gray-700">65%</span>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-xl font-semibold text-gray-800">Your Progress</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loadingProgress ? (
+                <div className="flex justify-center py-4">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2.5">
-                  <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: "65%" }}></div>
-                </div>
-              </div>
-
-              <div>
-                <div className="flex justify-between mb-1">
-                  <span className="text-sm font-medium text-gray-700">Vocabulary Learned</span>
-                  <span className="text-sm font-medium text-gray-700">42%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2.5">
-                  <div className="bg-green-600 h-2.5 rounded-full" style={{ width: "42%" }}></div>
-                </div>
-              </div>
-            </div>
-          </div>
+              ) : (
+                <Tabs defaultValue="nor-to-eng" className="w-full">
+                  <TabsList className="grid w-full grid-cols-3 mb-4">
+                    <TabsTrigger value="nor-to-eng">Norwegian → English</TabsTrigger>
+                    <TabsTrigger value="eng-to-nor">English → Norwegian</TabsTrigger>
+                    <TabsTrigger value="tenses">Tenses</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="nor-to-eng" className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div className="bg-blue-50 p-4 rounded-lg text-center">
+                        <div className="text-3xl font-bold text-blue-700">
+                          {progressData?.stats?.norToEng?.accuracy?.toFixed(1) || 0}%
+                        </div>
+                        <div className="text-sm text-gray-600">Accuracy</div>
+                      </div>
+                      <div className="bg-blue-50 p-4 rounded-lg text-center">
+                        <div className="text-3xl font-bold text-blue-700">
+                          {progressData?.stats?.norToEng?.verbsAttempted || 0}/{progressData?.stats?.totalVerbs || 0}
+                        </div>
+                        <div className="text-sm text-gray-600">Verbs Attempted</div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div>
+                        <div className="flex justify-between mb-1">
+                          <span className="text-sm font-medium text-gray-700">Mastery</span>
+                          <span className="text-sm font-medium text-gray-700">
+                            {progressData?.stats?.norToEng?.masteryPercentage?.toFixed(1) || 0}%
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2.5">
+                          <div 
+                            className="bg-blue-600 h-2.5 rounded-full" 
+                            style={{ width: `${progressData?.stats?.norToEng?.masteryPercentage || 0}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <div className="flex justify-between mb-1">
+                          <span className="text-sm font-medium text-gray-700">Coverage</span>
+                          <span className="text-sm font-medium text-gray-700">
+                            {progressData?.stats?.norToEng?.verbsAttempted && progressData?.stats?.totalVerbs ? 
+                              ((progressData.stats.norToEng.verbsAttempted / progressData.stats.totalVerbs) * 100).toFixed(1) : 0}%
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2.5">
+                          <div 
+                            className="bg-indigo-400 h-2.5 rounded-full" 
+                            style={{ 
+                              width: `${progressData?.stats?.norToEng?.verbsAttempted && progressData?.stats?.totalVerbs ? 
+                                (progressData.stats.norToEng.verbsAttempted / progressData.stats.totalVerbs) * 100 : 0}%` 
+                            }}
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="eng-to-nor" className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div className="bg-green-50 p-4 rounded-lg text-center">
+                        <div className="text-3xl font-bold text-green-700">
+                          {progressData?.stats?.engToNor?.accuracy?.toFixed(1) || 0}%
+                        </div>
+                        <div className="text-sm text-gray-600">Accuracy</div>
+                      </div>
+                      <div className="bg-green-50 p-4 rounded-lg text-center">
+                        <div className="text-3xl font-bold text-green-700">
+                          {progressData?.stats?.engToNor?.verbsAttempted || 0}/{progressData?.stats?.totalVerbs || 0}
+                        </div>
+                        <div className="text-sm text-gray-600">Verbs Attempted</div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div>
+                        <div className="flex justify-between mb-1">
+                          <span className="text-sm font-medium text-gray-700">Mastery</span>
+                          <span className="text-sm font-medium text-gray-700">
+                            {progressData?.stats?.engToNor?.masteryPercentage?.toFixed(1) || 0}%
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2.5">
+                          <div 
+                            className="bg-green-600 h-2.5 rounded-full" 
+                            style={{ width: `${progressData?.stats?.engToNor?.masteryPercentage || 0}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <div className="flex justify-between mb-1">
+                          <span className="text-sm font-medium text-gray-700">Coverage</span>
+                          <span className="text-sm font-medium text-gray-700">
+                            {progressData?.stats?.engToNor?.verbsAttempted && progressData?.stats?.totalVerbs ? 
+                              ((progressData.stats.engToNor.verbsAttempted / progressData.stats.totalVerbs) * 100).toFixed(1) : 0}%
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2.5">
+                          <div 
+                            className="bg-emerald-400 h-2.5 rounded-full" 
+                            style={{ 
+                              width: `${progressData?.stats?.engToNor?.verbsAttempted && progressData?.stats?.totalVerbs ? 
+                                (progressData.stats.engToNor.verbsAttempted / progressData.stats.totalVerbs) * 100 : 0}%` 
+                            }}
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="tenses" className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div className="bg-purple-50 p-4 rounded-lg text-center">
+                        <div className="text-3xl font-bold text-purple-700">
+                          {progressData?.stats?.tenses?.accuracy?.toFixed(1) || 0}%
+                        </div>
+                        <div className="text-sm text-gray-600">Accuracy</div>
+                      </div>
+                      <div className="bg-purple-50 p-4 rounded-lg text-center">
+                        <div className="text-3xl font-bold text-purple-700">
+                          {progressData?.stats?.tenses?.verbsAttempted || 0}/{progressData?.stats?.totalVerbs || 0}
+                        </div>
+                        <div className="text-sm text-gray-600">Verbs Attempted</div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div>
+                        <div className="flex justify-between mb-1">
+                          <span className="text-sm font-medium text-gray-700">Mastery</span>
+                          <span className="text-sm font-medium text-gray-700">
+                            {progressData?.stats?.tenses?.masteryPercentage?.toFixed(1) || 0}%
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2.5">
+                          <div 
+                            className="bg-purple-600 h-2.5 rounded-full" 
+                            style={{ width: `${progressData?.stats?.tenses?.masteryPercentage || 0}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <div className="flex justify-between mb-1">
+                          <span className="text-sm font-medium text-gray-700">Coverage</span>
+                          <span className="text-sm font-medium text-gray-700">
+                            {progressData?.stats?.tenses?.verbsAttempted && progressData?.stats?.totalVerbs ? 
+                              ((progressData.stats.tenses.verbsAttempted / progressData.stats.totalVerbs) * 100).toFixed(1) : 0}%
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2.5">
+                          <div 
+                            className="bg-violet-400 h-2.5 rounded-full" 
+                            style={{ 
+                              width: `${progressData?.stats?.tenses?.verbsAttempted && progressData?.stats?.totalVerbs ? 
+                                (progressData.stats.tenses.verbsAttempted / progressData.stats.totalVerbs) * 100 : 0}%` 
+                            }}
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              )}
+            </CardContent>
+          </Card>
         </div>
       ) : (
         // Content for logged-out users

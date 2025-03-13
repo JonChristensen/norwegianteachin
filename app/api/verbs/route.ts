@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { getSession } from "@auth0/nextjs-auth0"
+import { getSession } from "@auth0/nextjs-auth0/edge"
 
 // This tells Next.js to always render this route dynamically
 export const dynamic = 'force-dynamic'
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
     const session = await getSession()
     
@@ -33,34 +33,34 @@ export async function GET(request: Request) {
       })
     }
 
-    // Get all verbs with user progress
+    // Get all verbs with progress for this user
     const verbs = await prisma.verb.findMany({
       include: {
         progressEntries: {
           where: {
             userId: user.id
+          },
+          select: {
+            totalAttempts: true,
+            correctAttempts: true,
+            exerciseType: true
           }
         }
       }
     })
 
     // Format the verbs for the response
-    const verbsWithProgress = verbs.map(verb => {
-      const progress = verb.progressEntries[0] || { totalAttempts: 0, correctAttempts: 0 }
-      
-      return {
-        id: verb.id,
-        norwegian: verb.norwegian,
-        englishMeanings: verb.englishMeanings,
-        past: verb.past,
-        pastParticiple: verb.pastParticiple,
-        mnemonic: verb.mnemonic,
-        totalAttempts: progress.totalAttempts,
-        correctAttempts: progress.correctAttempts
-      }
-    })
+    const formattedVerbs = verbs.map(verb => ({
+      id: verb.id,
+      norwegian: verb.norwegian,
+      englishMeanings: verb.englishMeanings,
+      past: verb.past,
+      pastParticiple: verb.pastParticiple,
+      mnemonic: verb.mnemonic,
+      progress: verb.progressEntries
+    }))
 
-    return NextResponse.json(verbsWithProgress)
+    return NextResponse.json(formattedVerbs)
   } catch (error) {
     console.error("Error fetching verbs:", error)
     return NextResponse.json(

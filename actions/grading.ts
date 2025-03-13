@@ -45,12 +45,13 @@ export async function gradeAnswer(verbId: string, userAnswer: string, direction:
     isCorrect = await checkWithAI(userAnswer, correctAnswer, direction)
   }
 
-  // Update user progress
+  // Update user progress - MODIFIED to include exerciseType
   await prisma.userVerbProgress.upsert({
     where: {
-      userId_verbId: {
+      userId_verbId_exerciseType: {
         userId: user.id,
         verbId: verb.id,
+        exerciseType: direction, // Use direction as the exercise type
       },
     },
     update: {
@@ -61,6 +62,7 @@ export async function gradeAnswer(verbId: string, userAnswer: string, direction:
     create: {
       userId: user.id,
       verbId: verb.id,
+      exerciseType: direction, // Use direction as the exercise type
       totalAttempts: 1,
       correctAttempts: isCorrect ? 1 : 0,
     },

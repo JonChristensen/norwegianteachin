@@ -47,14 +47,48 @@ export async function getRandomVerb(direction: "nor-to-eng" | "eng-to-nor") {
 export async function getUserProgress() {
   const user = await getOrCreateUser()
 
-  const progress = await prisma.userVerbProgress.findMany({
-    where: { userId: user.id },
+  // Get progress for each exercise type
+  const norToEngProgress = await prisma.userVerbProgress.findMany({
+    where: { 
+      userId: user.id,
+      exerciseType: "nor-to-eng"
+    },
     include: { verb: true },
   })
 
+  const engToNorProgress = await prisma.userVerbProgress.findMany({
+    where: { 
+      userId: user.id,
+      exerciseType: "eng-to-nor"
+    },
+    include: { verb: true },
+  })
+
+  // You can add a third type if needed (e.g., "vocabReview")
+
   const totalVerbs = await prisma.verb.count()
 
-  // Calculate overall stats
+  // Calculate stats for nor-to-eng
+  const norToEngStats = calculateStats(norToEngProgress, totalVerbs)
+  
+  // Calculate stats for eng-to-nor
+  const engToNorStats = calculateStats(engToNorProgress, totalVerbs)
+
+  return {
+    progress: {
+      norToEng: norToEngProgress,
+      engToNor: engToNorProgress,
+    },
+    stats: {
+      totalVerbs,
+      norToEng: norToEngStats,
+      engToNor: engToNorStats,
+    },
+  }
+}
+
+// Helper function to calculate stats for a specific exercise type
+function calculateStats(progress: any[], totalVerbs: number) {
   const totalAttempts = progress.reduce((sum, p) => sum + p.totalAttempts, 0)
   const totalCorrect = progress.reduce((sum, p) => sum + p.correctAttempts, 0)
   const verbsAttempted = progress.length
@@ -63,14 +97,10 @@ export async function getUserProgress() {
   ).length
 
   return {
-    progress,
-    stats: {
-      totalVerbs,
-      verbsAttempted,
-      masteredVerbs,
-      masteryPercentage: totalVerbs > 0 ? (masteredVerbs / totalVerbs) * 100 : 0,
-      accuracy: totalAttempts > 0 ? (totalCorrect / totalAttempts) * 100 : 0,
-    },
+    verbsAttempted,
+    masteredVerbs,
+    masteryPercentage: totalVerbs > 0 ? (masteredVerbs / totalVerbs) * 100 : 0,
+    accuracy: totalAttempts > 0 ? (totalCorrect / totalAttempts) * 100 : 0,
   }
 }
 

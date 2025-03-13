@@ -70,7 +70,8 @@ async function migrateData() {
               verbId: String(prog.verb_id),
               totalAttempts: prog.total_attempts || 0,
               correctAttempts: prog.correct_attempts || 0,
-              lastReviewed: prog.last_reviewed || new Date()
+              lastReviewed: prog.last_reviewed || new Date(),
+              exerciseType: 'general'
             }
           })
         }
@@ -81,19 +82,9 @@ async function migrateData() {
     } catch (error) {
       console.log('Error checking for UserVerbProgress table, skipping progress migration:', error)
     }
-    
-    console.log('Data migration completed successfully!')
   } catch (error) {
-    console.error('Error during migration:', error)
-    throw error
-  } finally {
-    await prisma.$disconnect()
-    await pool.end()
+    console.log('Error during data migration:', error)
   }
 }
 
 migrateData()
-  .catch(e => {
-    console.error(e)
-    process.exit(1)
-  })

@@ -173,9 +173,10 @@ export async function POST(request: Request) {
     if (!hintRequested) {
       const progress = await prisma.userVerbProgress.upsert({
         where: {
-          userId_verbId: {
+          userId_verbId_exerciseType: {
             userId: user.id,
-            verbId: verb.id
+            verbId: verb.id,
+            exerciseType: exerciseType
           }
         },
         update: {
@@ -186,6 +187,7 @@ export async function POST(request: Request) {
         create: {
           userId: user.id,
           verbId: verb.id,
+          exerciseType: exerciseType,
           totalAttempts: 1,
           correctAttempts: isCorrect ? 1 : 0,
           lastReviewed: new Date()

@@ -34,14 +34,15 @@ model UserVerbProgress {
   id              String   @id @default(cuid())
   userId          String
   verbId          String
+  exerciseType    String   // Add this field to track different exercise types
   totalAttempts   Int      @default(0)
   correctAttempts Int      @default(0)
   lastReviewed    DateTime @default(now())
   
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  verb Verb @relation(fields: [verbId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, verbId])
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  verb            Verb     @relation(fields: [verbId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, verbId, exerciseType]) // Update unique constraint to include exerciseType
   @@map("prisma_user_verb_progress") // This maps to a different table name
 }
 
