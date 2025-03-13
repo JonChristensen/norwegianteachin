@@ -1,5 +1,4 @@
-import { handleAuth, handleLogout } from '@auth0/nextjs-auth0';
+import { handleAuth } from '@auth0/nextjs-auth0/edge';
 
-export const { GET, POST } = handleAuth({
-  logout: handleLogout({ returnTo: process.env.AUTH0_BASE_URL || 'https://norwegianteachin.com' })
-}); 
+export const GET = handleAuth();
+export const POST = handleAuth(); 

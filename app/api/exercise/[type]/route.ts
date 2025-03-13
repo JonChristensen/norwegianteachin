@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { getSession } from "@auth0/nextjs-auth0"
+import { getSession } from '@auth0/nextjs-auth0/edge'
 
 // This tells Next.js to always render this route dynamically
 export const dynamic = 'force-dynamic'

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { getSession } from "@auth0/nextjs-auth0"
+import { getSession } from "@auth0/nextjs-auth0/edge"
 import OpenAI from "openai"
 import { cookies } from "next/headers"
 
@@ -90,13 +90,6 @@ export async function GET(request: Request) {
       )
     }
     
-    // Set a cookie to track that a hint was requested for this verb
-    const cookieStore = cookies()
-    cookieStore.set(`hint_requested_${verbId}`, "true", {
-      maxAge: 60 * 60, // 1 hour
-      path: "/"
-    })
-    
     // Get the verb from the database
     const verb = await prisma.verb.findUnique({
       where: {
@@ -114,7 +107,15 @@ export async function GET(request: Request) {
     // Generate a hint for the verb
     const hint = await generateContextForVerb(verb)
     
-    return NextResponse.json({ hint })
+    // Set a cookie to track that a hint was requested for this verb
+    const cookieStore = cookies()
+    const response = NextResponse.json({ hint })
+    response.cookies.set(`hint_requested_${verbId}`, "true", {
+      maxAge: 60 * 60, // 1 hour
+      path: "/"
+    })
+    
+    return response
   } catch (error) {
     console.error("Error getting hint:", error)
     return NextResponse.json(

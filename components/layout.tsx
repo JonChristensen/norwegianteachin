@@ -55,23 +55,23 @@ export function Layout({ children }: LayoutProps) {
                   </Link>
                   <div className="border-l border-blue-400 h-6 mx-2"></div>
                   <span className="text-blue-100">Welcome, {user.name || user.email}!</span>
-                  <Link
+                  <a
                     href="/api/auth/logout"
                     className="flex items-center space-x-1 bg-red-600 hover:bg-red-700 px-3 py-1.5 rounded-md transition-colors"
                   >
                     <LogOut className="h-4 w-4" />
                     <span>Logout</span>
-                  </Link>
+                  </a>
                 </>
               )}
 
               {!user && !isLoading && (
-                <Link
+                <a
                   href="/api/auth/login"
                   className="flex items-center space-x-1 bg-blue-500 hover:bg-blue-600 px-3 py-1.5 rounded-md transition-colors"
                 >
                   <span>Login</span>
-                </Link>
+                </a>
               )}
             </nav>
 
@@ -120,24 +120,24 @@ export function Layout({ children }: LayoutProps) {
                 </Link>
                 <div className="border-t border-blue-600 my-2"></div>
                 <div className="px-3 py-2 text-blue-200">Welcome, {user.name || user.email}!</div>
-                <Link
+                <a
                   href="/api/auth/logout"
                   className="block px-3 py-2 bg-red-600 hover:bg-red-700 rounded-md transition-colors"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Logout
-                </Link>
+                </a>
               </>
             )}
 
             {!user && !isLoading && (
-              <Link
+              <a
                 href="/api/auth/login"
                 className="block px-3 py-2 bg-blue-500 hover:bg-blue-600 rounded-md transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Login
-              </Link>
+              </a>
             )}
           </div>
         </div>

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { getSession } from "@auth0/nextjs-auth0"
+import { getSession } from "@auth0/nextjs-auth0/edge"
 import OpenAI from "openai"
 import { cookies } from "next/headers"
 
@@ -132,7 +132,9 @@ export async function POST(request: Request) {
     
     // Check if a hint was requested for this verb
     const cookieStore = cookies()
-    const hintRequested = cookieStore.get(`hint_requested_${verbId}`)
+    const hintRequested = await cookieStore.then(cookies => 
+      cookies.get(`hint_requested_${verbId}`)
+    )
     
     let isCorrect = false
     let feedback = ""
@@ -141,9 +143,6 @@ export async function POST(request: Request) {
     if (hintRequested) {
       isCorrect = false
       feedback = "You got a hint for this exercise; this attempt will not count as correct."
-      
-      // Clear the hint cookie
-      cookieStore.delete(`hint_requested_${verbId}`)
     } else {
       // Grade the answer based on the exercise type
       if (exerciseType === "nor-to-eng") {
@@ -194,7 +193,17 @@ export async function POST(request: Request) {
       })
     }
     
-    return NextResponse.json({ isCorrect, feedback })
+    const response = NextResponse.json({ 
+      isCorrect, 
+      feedback, 
+      correctAnswer: isCorrect ? verb.englishMeanings : null 
+    })
+    
+    if (hintRequested) {
+      response.cookies.delete(`hint_requested_${verbId}`)
+    }
+    
+    return response
   } catch (error) {
     console.error("Error submitting answer:", error)
     return NextResponse.json(

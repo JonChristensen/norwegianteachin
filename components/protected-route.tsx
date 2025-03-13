@@ -12,7 +12,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!isLoading && !user && !error) {
-      // Redirect to Auth0 login
+      // Redirect to Auth0 login - update the path
       window.location.href = "/api/auth/login"
     }
   }, [user, isLoading, error, router])
