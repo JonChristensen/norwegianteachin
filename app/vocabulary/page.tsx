@@ -133,6 +133,7 @@ export default function VocabularyPage() {
                     <TabsTrigger value="all">All Progress</TabsTrigger>
                     <TabsTrigger value="nor-to-eng">Nor → Eng</TabsTrigger>
                     <TabsTrigger value="eng-to-nor">Eng → Nor</TabsTrigger>
+                    <TabsTrigger value="tenses">Tenses</TabsTrigger>
                   </TabsList>
                 </Tabs>
               </div>
@@ -153,7 +154,8 @@ export default function VocabularyPage() {
                         <TableHead>
                           {activeTab === "all" ? "Overall Progress" : 
                            activeTab === "nor-to-eng" ? "Norwegian → English" : 
-                           "English → Norwegian"}
+                           activeTab === "eng-to-nor" ? "English → Norwegian" :
+                           "Tenses Progress"}
                         </TableHead>
                       </TableRow>
                     </TableHeader>
@@ -172,7 +174,12 @@ export default function VocabularyPage() {
                                 <div className="flex items-center">
                                   <div className="w-full bg-gray-200 rounded-full h-2.5 mr-2">
                                     <div 
-                                      className={`${activeTab === "eng-to-nor" ? "bg-green-600" : activeTab === "nor-to-eng" ? "bg-blue-600" : "bg-purple-600"} h-2.5 rounded-full`}
+                                      className={`${
+                                        activeTab === "eng-to-nor" ? "bg-green-600" : 
+                                        activeTab === "nor-to-eng" ? "bg-blue-600" : 
+                                        activeTab === "tenses" ? "bg-purple-600" :
+                                        "bg-gray-600"
+                                      } h-2.5 rounded-full`}
                                       style={{ width: `${(progress.correctAttempts / progress.totalAttempts) * 100}%` }}
                                     ></div>
                                   </div>
